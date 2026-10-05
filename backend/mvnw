@@ -1,0 +1,52 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup script for POSIX systems
+# ----------------------------------------------------------------------------
+
+set -e
+
+[ -z "$MAVEN_BASEDIR" ] && MAVEN_BASEDIR="$(pwd)"
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=$(ls -ld "$PRG")
+  link=$(expr "$ls" : '.*-> \(.*\)$')
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="$(dirname "$PRG")/$link"
+  fi
+done
+
+BASEDIR="$(cd -P "$(dirname "$PRG")" && pwd)"
+WRAPPER_JAR="$BASEDIR/.mvn/wrapper/maven-wrapper.jar"
+
+if [ -z "$JAVA_HOME" ]; then
+  JAVACMD=java
+else
+  JAVACMD="$JAVA_HOME/bin/java"
+fi
+
+if [ ! -x "$(command -v "$JAVACMD")" ] && [ ! -f "$JAVACMD" ]; then
+  echo "Error: JAVA_HOME is not defined and 'java' was not found in PATH." >&2
+  exit 1
+fi
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Downloading Maven Wrapper jar..."
+  PROPERTIES_FILE="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
+  WRAPPER_URL=$(grep -o '^wrapperUrl=.*' "$PROPERTIES_FILE" | cut -d= -f2-)
+  if [ -z "$WRAPPER_URL" ]; then
+    WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+  fi
+  mkdir -p "$BASEDIR/.mvn/wrapper"
+  if command -v curl > /dev/null; then
+    curl -fsSL "$WRAPPER_URL" -o "$WRAPPER_JAR"
+  elif command -v wget > /dev/null; then
+    wget -qO "$WRAPPER_JAR" "$WRAPPER_URL"
+  else
+    echo "Error: curl or wget required to download wrapper." >&2
+    exit 1
+  fi
+fi
+
+exec "$JAVACMD" -jar "$WRAPPER_JAR" "$@"
