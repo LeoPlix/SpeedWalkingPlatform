@@ -66,18 +66,11 @@ public class InfractionService {
         InfractionType type = InfractionType.fromString(request.getInfractionType());
         CardCategory category = CardCategory.fromString(request.getCardCategory());
 
-        // Resolve athlete name
-        String athleteName = request.getAthleteName();
-        Optional<Athlete> athleteOpt = athleteRepository.findByCompetitionIdAndBibNumber(competition.getId(), request.getBibNumber());
-        if (athleteOpt.isPresent()) {
-            athleteName = athleteOpt.get().getName();
-        } else {
-            // Auto create athlete if not existing
-            athleteService.getOrCreateAthlete(competition, request.getBibNumber(), athleteName);
-            if (athleteName == null || athleteName.isBlank()) {
-                athleteName = "Atleta #" + request.getBibNumber();
-            }
-        }
+        // Validate athlete exists
+        String bibNumber = request.getBibNumber() != null ? request.getBibNumber().trim() : "";
+        Athlete athlete = athleteRepository.findByCompetitionIdAndBibNumber(competition.getId(), bibNumber)
+                .orElseThrow(() -> new RuntimeException("Dorsal #" + bibNumber + " não pertence a nenhum atleta registado nesta competição."));
+        String athleteName = athlete.getName();
 
         Infraction infraction = new Infraction(
                 competition,

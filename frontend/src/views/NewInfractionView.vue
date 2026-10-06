@@ -47,10 +47,25 @@
               ✕
             </button>
           </div>
-          <div class="athlete-display" :class="{ 'has-athlete': !!athleteName }">
+          <div
+            class="athlete-display"
+            :class="{
+              'has-athlete': athleteFound,
+              'not-found': athleteNotFound && bibNumber
+            }"
+          >
             <span class="athlete-label">ATLETA:</span>
-            <span class="athlete-name">{{ athleteName || 'Atleta Desconhecido' }}</span>
-            <span v-if="athleteTeam" class="athlete-team">({{ athleteTeam }})</span>
+            <span v-if="loadingAthlete" class="athlete-name text-muted">A verificar...</span>
+            <template v-else-if="athleteFound">
+              <span class="athlete-name text-success">{{ athleteName }}</span>
+              <span v-if="athleteTeam" class="athlete-team">({{ athleteTeam }})</span>
+            </template>
+            <span v-else-if="athleteNotFound && bibNumber" class="athlete-name text-danger">
+              ⚠ Dorsal não encontrado
+            </span>
+            <span v-else class="athlete-name text-muted font-normal">
+              Introduza o dorsal do atleta
+            </span>
           </div>
         </div>
       </div>
@@ -177,11 +192,14 @@ const competitionStore = useCompetitionStore()
 const bibNumber = ref('')
 const athleteName = ref('')
 const athleteTeam = ref('')
+const athleteFound = ref(false)
+const athleteNotFound = ref(false)
 const raceTime = ref('')
 const loadingAthlete = ref(false)
 const submitting = ref(false)
 const successToast = ref('')
 const errorToast = ref('')
+const allAthletes = ref([])
 const popularAthletes = ref([])
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
@@ -213,6 +231,8 @@ const clearBib = () => {
   bibNumber.value = ''
   athleteName.value = ''
   athleteTeam.value = ''
+  athleteFound.value = false
+  athleteNotFound.value = false
 }
 
 const resetTimeToNow = () => {
@@ -221,53 +241,101 @@ const resetTimeToNow = () => {
   raceTime.value = now.toTimeString().split(' ')[0]
 }
 
-const onBibInput = async () => {
-  const bib = bibNumber.value.trim()
+const lookupAthlete = async (bibStr) => {
+  const bib = String(bibStr ?? '').trim()
   if (!bib) {
     athleteName.value = ''
     athleteTeam.value = ''
-    return
+    athleteFound.value = false
+    athleteNotFound.value = false
+    return false
   }
 
+  // 1. Check in local pre-fetched memory list (instant zero delay)
+  const localMatch = allAthletes.value.find(a => String(a.bibNumber).trim() === bib)
+  if (localMatch) {
+    athleteName.value = localMatch.name
+    athleteTeam.value = localMatch.team || ''
+    athleteFound.value = true
+    athleteNotFound.value = false
+  }
+
+  // 2. Query API to confirm / fetch latest
   loadingAthlete.value = true
   try {
     const compId = competitionStore.activeCompetition?.id || 1
     const res = await api.get(`/athletes/bib/${bib}?competitionId=${compId}`)
-    if (res.data) {
+    if (res.data && res.data.name) {
       athleteName.value = res.data.name
       athleteTeam.value = res.data.team || ''
+      athleteFound.value = true
+      athleteNotFound.value = false
+      return true
     }
   } catch (err) {
-    athleteName.value = 'Atleta Desconhecido'
-    athleteTeam.value = ''
+    if (!localMatch) {
+      athleteName.value = ''
+      athleteTeam.value = ''
+      athleteFound.value = false
+      athleteNotFound.value = true
+    }
   } finally {
     loadingAthlete.value = false
   }
+  return athleteFound.value
+}
+
+const onBibInput = () => {
+  const bib = String(bibNumber.value ?? '').trim()
+  lookupAthlete(bib)
 }
 
 const selectBib = (athlete) => {
   triggerHaptic(20)
-  bibNumber.value = athlete.bibNumber
+  bibNumber.value = String(athlete.bibNumber)
   athleteName.value = athlete.name
   athleteTeam.value = athlete.team || ''
+  athleteFound.value = true
+  athleteNotFound.value = false
 }
 
 const fetchAthletes = async () => {
   try {
     const compId = competitionStore.activeCompetition?.id || 1
     const res = await api.get(`/athletes?competitionId=${compId}`)
-    popularAthletes.value = res.data.slice(0, 6)
+    allAthletes.value = res.data || []
+    popularAthletes.value = allAthletes.value.slice(0, 6)
+
+    // Re-evaluate current bib if entered
+    if (bibNumber.value) {
+      onBibInput()
+    }
   } catch (err) {
     console.error(err)
   }
 }
 
-const handlePaddleClick = (type, category, symbol) => {
-  if (!bibNumber.value.trim()) {
+const handlePaddleClick = async (type, category, symbol) => {
+  const bib = String(bibNumber.value ?? '').trim()
+  if (!bib) {
     triggerHaptic([30, 50, 30])
     errorToast.value = 'Por favor introduza o Dorsal (BIB NUMBER) primeiro!'
     setTimeout(() => { errorToast.value = '' }, 3000)
     return
+  }
+
+  if (loadingAthlete.value) {
+    await lookupAthlete(bib)
+  }
+
+  if (!athleteFound.value) {
+    const found = await lookupAthlete(bib)
+    if (!found) {
+      triggerHaptic([80, 50, 80])
+      errorToast.value = `Erro: Dorsal #${bib} não existe na competição!`
+      setTimeout(() => { errorToast.value = '' }, 4000)
+      return
+    }
   }
 
   triggerHaptic(category === 'RC' ? 40 : 25)
@@ -281,12 +349,14 @@ const submitInfraction = async () => {
   submitting.value = true
   errorToast.value = ''
 
+  const bib = String(bibNumber.value ?? '').trim()
+
   try {
     const compId = competitionStore.activeCompetition?.id || 1
     const payload = {
       competitionId: compId,
       judgeId: authStore.user?.id,
-      bibNumber: bibNumber.value.trim(),
+      bibNumber: bib,
       athleteName: athleteName.value,
       time: raceTime.value.trim(),
       infractionType: selectedType.value,
@@ -297,10 +367,8 @@ const submitInfraction = async () => {
 
     triggerHaptic([50, 50, 50])
     modalOpen.value = false
-    successToast.value = `SENT! Infração registada para o dorsal #${bibNumber.value}`
-    bibNumber.value = ''
-    athleteName.value = ''
-    athleteTeam.value = ''
+    successToast.value = `SENT! Infração registada para o dorsal #${bib}`
+    clearBib()
     resetTimeToNow()
 
     setTimeout(() => {
@@ -463,6 +531,11 @@ onUnmounted(() => {
   border-color: #bfdbfe;
 }
 
+.athlete-display.not-found {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+}
+
 .athlete-label {
   font-weight: 700;
   color: #64748b;
@@ -472,6 +545,22 @@ onUnmounted(() => {
 .athlete-name {
   font-weight: 700;
   color: #1e293b;
+}
+
+.text-success {
+  color: #16a34a;
+}
+
+.text-danger {
+  color: #dc2626;
+}
+
+.text-muted {
+  color: #64748b;
+}
+
+.font-normal {
+  font-weight: 400;
 }
 
 .athlete-team {
