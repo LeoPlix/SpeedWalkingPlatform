@@ -1,5 +1,10 @@
 <template>
   <div class="new-infraction-view">
+    <!-- Online / Offline Banner -->
+    <div v-if="!isOnline" class="offline-banner">
+      📡 Modo offline: As infrações serão guardadas quando recuperar a ligação.
+    </div>
+
     <!-- Active Competition Banner -->
     <div class="comp-banner" v-if="competitionStore.activeCompetition">
       <span class="comp-label">Competição Ativa:</span>
@@ -22,15 +27,26 @@
           <span v-if="loadingAthlete" class="searching-tag">A pesquisar...</span>
         </div>
         <div class="input-with-athlete">
-          <input
-            id="bib"
-            v-model="bibNumber"
-            type="number"
-            inputmode="numeric"
-            class="form-input bib-input font-mono"
-            placeholder="Ex: 104"
-            @input="onBibInput"
-          />
+          <div class="bib-input-relative">
+            <input
+              id="bib"
+              v-model="bibNumber"
+              type="number"
+              inputmode="numeric"
+              class="form-input bib-input font-mono"
+              placeholder="Ex: 104"
+              @input="onBibInput"
+            />
+            <button
+              v-if="bibNumber"
+              type="button"
+              class="clear-bib-btn"
+              @click="clearBib"
+              aria-label="Limpar Dorsal"
+            >
+              ✕
+            </button>
+          </div>
           <div class="athlete-display" :class="{ 'has-athlete': !!athleteName }">
             <span class="athlete-label">ATLETA:</span>
             <span class="athlete-name">{{ athleteName || 'Atleta Desconhecido' }}</span>
@@ -167,6 +183,7 @@ const submitting = ref(false)
 const successToast = ref('')
 const errorToast = ref('')
 const popularAthletes = ref([])
+const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
 // Modal state
 const modalOpen = ref(false)
@@ -176,7 +193,30 @@ const selectedSymbol = ref('')
 
 let timeInterval = null
 
+// Haptic feedback helper for mobile touch feedback
+const triggerHaptic = (pattern = 25) => {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(pattern)
+    } catch (e) {
+      // Ignore vibration error on unsupported browsers
+    }
+  }
+}
+
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine
+}
+
+const clearBib = () => {
+  triggerHaptic(15)
+  bibNumber.value = ''
+  athleteName.value = ''
+  athleteTeam.value = ''
+}
+
 const resetTimeToNow = () => {
+  triggerHaptic(15)
   const now = new Date()
   raceTime.value = now.toTimeString().split(' ')[0]
 }
@@ -206,6 +246,7 @@ const onBibInput = async () => {
 }
 
 const selectBib = (athlete) => {
+  triggerHaptic(20)
   bibNumber.value = athlete.bibNumber
   athleteName.value = athlete.name
   athleteTeam.value = athlete.team || ''
@@ -223,11 +264,13 @@ const fetchAthletes = async () => {
 
 const handlePaddleClick = (type, category, symbol) => {
   if (!bibNumber.value.trim()) {
+    triggerHaptic([30, 50, 30])
     errorToast.value = 'Por favor introduza o Dorsal (BIB NUMBER) primeiro!'
     setTimeout(() => { errorToast.value = '' }, 3000)
     return
   }
 
+  triggerHaptic(category === 'RC' ? 40 : 25)
   selectedType.value = type
   selectedCategory.value = category
   selectedSymbol.value = symbol
@@ -252,6 +295,7 @@ const submitInfraction = async () => {
 
     await api.post('/infractions', payload)
 
+    triggerHaptic([50, 50, 50])
     modalOpen.value = false
     successToast.value = `SENT! Infração registada para o dorsal #${bibNumber.value}`
     bibNumber.value = ''
@@ -263,6 +307,7 @@ const submitInfraction = async () => {
       successToast.value = ''
     }, 4000)
   } catch (err) {
+    triggerHaptic([80, 50, 80])
     errorToast.value = err.response?.data?.error || 'Erro ao submeter infração'
     setTimeout(() => { errorToast.value = '' }, 4000)
   } finally {
@@ -273,12 +318,16 @@ const submitInfraction = async () => {
 onMounted(async () => {
   resetTimeToNow()
   timeInterval = setInterval(resetTimeToNow, 30000) // refresh time every 30s
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
   await competitionStore.fetchCompetitions()
   await fetchAthletes()
 })
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval)
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
 })
 </script>
 
@@ -349,16 +398,51 @@ onUnmounted(() => {
   font-style: italic;
 }
 
-.input-with-athlete {
+.offline-banner {
+  background-color: #ea580c;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.bib-input-relative {
+  position: relative;
+  width: 100%;
+}
+
+.clear-bib-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+}
+
+.clear-bib-btn:active {
+  background: #cbd5e1;
+  transform: translateY(-50%) scale(0.9);
 }
 
 .bib-input {
   font-size: 1.5rem;
   font-weight: 700;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
   text-align: center;
   letter-spacing: 0.1em;
 }

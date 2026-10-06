@@ -1,0 +1,18 @@
+{
+  "name": "Race Walking System - R.F.E.A.",
+  "short_name": "Marcha Atlética",
+  "description": "Plataforma de gestão técnica e arbitragem de provas de Marcha Atlética",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

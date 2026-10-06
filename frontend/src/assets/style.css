@@ -297,13 +297,19 @@ h1, h2, h3, h4 {
   background-color: #f1f5f9;
 }
 
+.btn, .circle-btn-container, .bib-chip, .mobile-nav-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Mobile Bottom Navigation */
 .mobile-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: #ffffff;
   border-top: 1px solid var(--border-color);
   display: flex;
@@ -318,3 +324,4 @@ h1, h2, h3, h4 {
     display: none;
   }
 }
+
