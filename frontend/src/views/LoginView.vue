@@ -3,10 +3,10 @@
     <div class="login-card">
       <div class="login-header">
         <div class="logo-circle">
-          <span>RW</span>
+          <span>FPA</span>
         </div>
-        <h2 class="app-name">R.F.E.A. System</h2>
-        <p class="app-desc">Plataforma de Juízes de Marcha Atlética</p>
+        <h2 class="app-name">FPA Marcha Atlética</h2>
+        <p class="app-desc">Plataforma Oficial do Conselho de Arbitragem (Portugal)</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
@@ -122,18 +122,18 @@ const handleLogin = async () => {
 }
 
 .logo-circle {
-  width: 56px;
-  height: 56px;
-  background-color: #dc2626;
-  border-radius: 14px;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #046a38 0%, #046a38 45%, #da291c 45%, #da291c 100%);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 900;
   margin: 0 auto 1rem;
-  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+  box-shadow: 0 4px 14px rgba(4, 106, 56, 0.4);
 }
 
 .app-name {

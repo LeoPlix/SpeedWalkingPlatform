@@ -1,7 +1,7 @@
 {
-  "name": "Race Walking System - R.F.E.A.",
-  "short_name": "Marcha Atlética",
-  "description": "Plataforma de gestão técnica e arbitragem de provas de Marcha Atlética",
+  "name": "Marcha Atlética - Federação Portuguesa de Atletismo",
+  "short_name": "FPA Marcha",
+  "description": "Plataforma oficial de gestão técnica e arbitragem de Marcha Atlética em Portugal",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

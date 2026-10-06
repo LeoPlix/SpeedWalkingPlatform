@@ -67,7 +67,7 @@
 
     <!-- TECHNICAL RULES CARD -->
     <div class="rules-card card">
-      <h3 class="rules-heading">Regulamento Técnico da Marcha Atlética (World Athletics / R.F.E.A.)</h3>
+      <h3 class="rules-heading">Regulamento Técnico da Marcha Atlética (World Athletics / Federação Portuguesa de Atletismo)</h3>
       <div class="rules-grid">
         <div class="rule-item">
           <div class="rule-symbol">&gt;</div>

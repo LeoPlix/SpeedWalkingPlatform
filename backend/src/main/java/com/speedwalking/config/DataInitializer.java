@@ -65,42 +65,42 @@ public class DataInitializer implements CommandLineRunner {
         );
         comp = competitionRepository.save(comp);
 
-        // 3. Athletes
+        // 3. Athletes (Athletes from Portugal)
         List<Athlete> athletes = Arrays.asList(
-                new Athlete("101", "Álvaro Martín", "Espanha", "20km Masculino", comp),
-                new Athlete("102", "Paul McGrath", "Espanha", "20km Masculino", comp),
-                new Athlete("103", "Ana Cabecinha", "Clube Oriental Pechão", "20km Feminino", comp),
-                new Athlete("104", "Caio Bonfim", "Brasil", "20km Masculino", comp),
-                new Athlete("105", "Vitória Oliveira", "SL Benfica", "20km Feminino", comp),
-                new Athlete("106", "João Vieira", "Sporting CP", "20km Masculino", comp),
-                new Athlete("107", "Rui Coelho", "SL Benfica", "20km Masculino", comp),
-                new Athlete("108", "Inês Henriques", "CN Rio Maior", "20km Feminino", comp),
-                new Athlete("109", "Massimo Stano", "Itália", "20km Masculino", comp),
-                new Athlete("110", "Perseus Karlström", "Suécia", "20km Masculino", comp)
+                new Athlete("101", "Pedro Isidro", "SL Benfica", "20km Masculino", comp),
+                new Athlete("102", "João Vieira", "Sporting CP", "20km Masculino", comp),
+                new Athlete("103", "Ana Cabecinha", "CO Pechão", "20km Feminino", comp),
+                new Athlete("104", "Vitória Oliveira", "SL Benfica", "20km Feminino", comp),
+                new Athlete("105", "Rui Coelho", "SL Benfica", "20km Masculino", comp),
+                new Athlete("106", "Inês Henriques", "CN Rio Maior", "20km Feminino", comp),
+                new Athlete("107", "Hélder Santos", "GD Estreito", "20km Masculino", comp),
+                new Athlete("108", "Edna Barros", "CO Pechão", "20km Feminino", comp),
+                new Athlete("109", "Tiago Ramos", "Sporting CP", "20km Masculino", comp),
+                new Athlete("110", "Carolina Costa", "Sporting CP", "20km Feminino", comp)
         );
         athleteRepository.saveAll(athletes);
 
         // 4. Sample Infractions for demo
         Infraction inf1 = new Infraction(
-                comp, j1, "104", "Caio Bonfim", "09:15:30",
+                comp, j1, "104", "Vitória Oliveira", "09:15:30",
                 InfractionType.CONTACTO, CardCategory.YP,
                 LocalDateTime.now().minusMinutes(40), "Perda de contacto na curva"
         );
 
         Infraction inf2 = new Infraction(
-                comp, j2, "104", "Caio Bonfim", "09:22:15",
+                comp, j2, "104", "Vitória Oliveira", "09:22:15",
                 InfractionType.CONTACTO, CardCategory.RC,
                 LocalDateTime.now().minusMinutes(33), "Contacto contínuo visível"
         );
 
         Infraction inf3 = new Infraction(
-                comp, j1, "106", "João Vieira", "09:28:40",
+                comp, j1, "102", "João Vieira", "09:28:40",
                 InfractionType.FLEXAO, CardCategory.YP,
                 LocalDateTime.now().minusMinutes(27), "Joelho flexionado no apoio"
         );
 
         Infraction inf4 = new Infraction(
-                comp, j3, "104", "Caio Bonfim", "09:35:10",
+                comp, j3, "104", "Vitória Oliveira", "09:35:10",
                 InfractionType.FLEXAO, CardCategory.RC,
                 LocalDateTime.now().minusMinutes(20), "Flexão repetida"
         );

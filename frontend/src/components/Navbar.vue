@@ -3,11 +3,11 @@
     <div class="header-container">
       <div class="brand-section">
         <div class="logo-box">
-          <span class="logo-text">RW</span>
+          <span class="logo-text">FPA</span>
         </div>
         <div>
-          <h1 class="brand-title">Race Walking System</h1>
-          <p class="brand-subtitle">R.F.E.A. / World Athletics Marcha</p>
+          <h1 class="brand-title">FPA Marcha Atlética</h1>
+          <p class="brand-subtitle">Federação Portuguesa de Atletismo</p>
         </div>
       </div>
 
@@ -82,16 +82,18 @@ const handleLogout = () => {
 }
 
 .logo-box {
-  width: 40px;
+  width: 44px;
   height: 40px;
   border-radius: 8px;
-  background-color: #dc2626;
+  background: linear-gradient(135deg, #046a38 0%, #046a38 45%, #da291c 45%, #da291c 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: white;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .brand-title {
