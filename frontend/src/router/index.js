@@ -37,7 +37,8 @@ const routes = [
   {
     path: '/admin',
     name: 'Admin',
-    component: AdminView
+    component: AdminView,
+    meta: { requiresAdmin: true }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -55,6 +56,8 @@ router.beforeEach((to, from, next) => {
   if (!to.meta.public && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.path === '/login' && authStore.isAuthenticated) {
+    next('/')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next('/')
   } else {
     next()

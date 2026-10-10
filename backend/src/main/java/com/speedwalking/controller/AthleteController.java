@@ -3,6 +3,7 @@ package com.speedwalking.controller;
 import com.speedwalking.dto.AthleteDto;
 import com.speedwalking.service.AthleteService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class AthleteController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<AthleteDto> createAthlete(@RequestBody AthleteDto dto) {
         return ResponseEntity.ok(athleteService.createAthlete(dto));

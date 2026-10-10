@@ -384,7 +384,7 @@ const fetchAthletes = async () => {
       onBibInput()
     }
   } catch (err) {
-    console.error(err)
+    allAthletes.value = []
   }
 }
 

@@ -109,7 +109,7 @@ const fetchAthletes = async () => {
     const res = await api.get(`/athletes?competitionId=${compId}`)
     athletes.value = res.data
   } catch (err) {
-    console.error(err)
+    athletes.value = []
   }
 }
 

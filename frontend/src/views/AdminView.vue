@@ -363,7 +363,7 @@ const fetchJudges = async () => {
     const res = await api.get('/auth/judges')
     judges.value = res.data
   } catch (err) {
-    console.error('Erro ao carregar juízes:', err)
+    judges.value = []
   }
 }
 
@@ -373,7 +373,7 @@ const fetchAthletes = async () => {
     const res = await api.get(`/athletes?competitionId=${compId}`)
     athletes.value = res.data
   } catch (err) {
-    console.error('Erro ao carregar atletas:', err)
+    athletes.value = []
   }
 }
 

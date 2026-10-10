@@ -255,7 +255,7 @@ const fetchBoard = async () => {
     const res = await api.get(`/board/summary?competitionId=${compId}`)
     boardSummary.value = res.data
   } catch (err) {
-    console.error('Erro ao carregar quadro:', err)
+    boardSummary.value = null
   }
 }
 
@@ -265,7 +265,7 @@ const fetchInfractions = async () => {
     const res = await api.get(`/infractions?competitionId=${compId}`)
     infractions.value = res.data
   } catch (err) {
-    console.error('Erro ao carregar infrações:', err)
+    infractions.value = []
   }
 }
 

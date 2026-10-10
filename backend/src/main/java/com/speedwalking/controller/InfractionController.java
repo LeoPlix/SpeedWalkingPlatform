@@ -6,6 +6,7 @@ import com.speedwalking.model.User;
 import com.speedwalking.service.InfractionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,13 +33,19 @@ public class InfractionController {
         return ResponseEntity.ok(infractionService.getInfractionsByCompetition(competitionId));
     }
 
+    @PreAuthorize("hasAnyAuthority('ROLE_JUDGE', 'ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<?> createInfraction(@Valid @RequestBody InfractionRequest request,
                                               Authentication authentication) {
         try {
             String currentUsername = null;
             if (authentication != null && authentication.getPrincipal() instanceof User) {
-                currentUsername = ((User) authentication.getPrincipal()).getUsername();
+                User currentUser = (User) authentication.getPrincipal();
+                currentUsername = currentUser.getUsername();
+                // A judge can only record infractions under their own ID
+                if (currentUser.getRole() == com.speedwalking.model.Role.ROLE_JUDGE) {
+                    request.setJudgeId(currentUser.getId());
+                }
             }
             InfractionResponse response = infractionService.registerInfraction(request, currentUsername);
             return ResponseEntity.ok(response);
@@ -47,6 +54,7 @@ public class InfractionController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteInfraction(@PathVariable Long id) {
         try {

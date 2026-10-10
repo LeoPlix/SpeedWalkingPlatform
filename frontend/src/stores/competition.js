@@ -27,7 +27,8 @@ export const useCompetitionStore = defineStore('competition', {
           }
         }
       } catch (err) {
-        console.error('Erro ao carregar competições:', err)
+        // Silently capture error state without dumping auth tokens or request config to console
+        this.error = err.response?.data?.error || 'Erro ao carregar competições'
       } finally {
         this.loading = false
       }

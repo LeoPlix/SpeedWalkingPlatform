@@ -150,7 +150,8 @@ onMounted(async () => {
     const res = await api.get(`/board/summary?competitionId=${compId}`)
     boardSummary.value = res.data
   } catch (err) {
-    console.error(err)
+    // Graceful fallback without leaking request headers or tokens in console
+    boardSummary.value = null
   }
 })
 </script>

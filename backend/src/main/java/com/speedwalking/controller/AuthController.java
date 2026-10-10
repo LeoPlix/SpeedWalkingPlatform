@@ -7,6 +7,7 @@ import com.speedwalking.repository.UserRepository;
 import com.speedwalking.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,6 +59,7 @@ public class AuthController {
         ));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @GetMapping("/judges")
     public ResponseEntity<List<Map<String, Object>>> getJudges() {
         List<Map<String, Object>> judges = userRepository.findAll().stream()
@@ -74,6 +76,7 @@ public class AuthController {
         return ResponseEntity.ok(judges);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping("/judges")
     public ResponseEntity<?> createJudge(@RequestBody Map<String, String> request) {
         String username = request.get("username");

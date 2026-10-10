@@ -3,6 +3,7 @@ package com.speedwalking.controller;
 import com.speedwalking.dto.CompetitionDto;
 import com.speedwalking.service.CompetitionService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,16 +37,19 @@ public class CompetitionController {
         return ResponseEntity.ok(list.get(0));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<CompetitionDto> create(@RequestBody CompetitionDto dto) {
         return ResponseEntity.ok(competitionService.createCompetition(dto));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CompetitionDto> update(@PathVariable Long id, @RequestBody CompetitionDto dto) {
         return ResponseEntity.ok(competitionService.updateCompetition(id, dto));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<CompetitionDto> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
         String status = body.getOrDefault("status", "ACTIVE");

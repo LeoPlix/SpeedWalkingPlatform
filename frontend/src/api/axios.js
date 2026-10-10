@@ -18,4 +18,19 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error)
 })
 
+// Response interceptor to handle expired/invalid tokens
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('race_walking_token')
+      localStorage.removeItem('race_walking_user')
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 export default api

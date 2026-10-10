@@ -27,7 +27,7 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsername());
 
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Credenciais inválidas: utilizador não encontrado");
+            throw new RuntimeException("Credenciais inválidas: utilizador ou palavra-passe incorretos");
         }
 
         User user = userOpt.get();
@@ -37,7 +37,7 @@ public class AuthService {
                 || loginRequest.getPassword().equals(user.getPassword());
 
         if (!matches) {
-            throw new RuntimeException("Credenciais inválidas: password incorreta");
+            throw new RuntimeException("Credenciais inválidas: utilizador ou palavra-passe incorretos");
         }
 
         String token = tokenProvider.generateToken(user.getUsername(), user.getRole().name(), user.getId());
