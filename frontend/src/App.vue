@@ -22,6 +22,11 @@
         <span class="nav-icon">📋</span>
         <span class="nav-text">LISTS</span>
       </router-link>
+
+      <router-link v-if="authStore.isAdmin" to="/admin" class="mobile-nav-item" active-class="active">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-text">ADMIN</span>
+      </router-link>
     </nav>
   </div>
 </template>

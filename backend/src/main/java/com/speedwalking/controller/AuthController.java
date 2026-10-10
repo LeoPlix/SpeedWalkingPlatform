@@ -21,10 +21,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthService authService, UserRepository userRepository) {
+    public AuthController(AuthService authService,
+                          UserRepository userRepository,
+                          org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -68,5 +72,44 @@ public class AuthController {
                 })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(judges);
+    }
+
+    @PostMapping("/judges")
+    public ResponseEntity<?> createJudge(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        String name = request.get("name");
+        String judgeCode = request.get("judgeCode");
+
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nome de utilizador é obrigatório"));
+        }
+        if (password == null || password.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Palavra-passe é obrigatória"));
+        }
+        if (name == null || name.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nome completo é obrigatório"));
+        }
+
+        if (userRepository.findByUsername(username).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nome de utilizador '" + username + "' já existe"));
+        }
+
+        User judge = new User(
+                username.trim(),
+                passwordEncoder.encode(password.trim()),
+                name.trim(),
+                com.speedwalking.model.Role.ROLE_JUDGE,
+                judgeCode != null ? judgeCode.trim() : "J" + (userRepository.count() + 1)
+        );
+
+        User saved = userRepository.save(judge);
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", saved.getId());
+        map.put("username", saved.getUsername());
+        map.put("name", saved.getName());
+        map.put("role", saved.getRole().name());
+        map.put("judgeCode", saved.getJudgeCode());
+        return ResponseEntity.ok(map);
     }
 }

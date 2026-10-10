@@ -38,10 +38,28 @@ public class CompetitionService {
         Competition comp = new Competition(
                 dto.getName(),
                 dto.getLocation(),
-                dto.getDate(),
+                dto.getDate() != null ? dto.getDate() : java.time.LocalDate.now(),
                 dto.getStatus() != null ? dto.getStatus() : "ACTIVE",
                 dto.isPenaltyZoneEnabled()
         );
+        Competition saved = competitionRepository.save(comp);
+        return mapToDto(saved);
+    }
+
+    public CompetitionDto updateStatus(Long id, String status) {
+        Competition comp = getEntityById(id);
+        comp.setStatus(status);
+        Competition saved = competitionRepository.save(comp);
+        return mapToDto(saved);
+    }
+
+    public CompetitionDto updateCompetition(Long id, CompetitionDto dto) {
+        Competition comp = getEntityById(id);
+        if (dto.getName() != null && !dto.getName().isBlank()) comp.setName(dto.getName());
+        if (dto.getLocation() != null) comp.setLocation(dto.getLocation());
+        if (dto.getDate() != null) comp.setDate(dto.getDate());
+        if (dto.getStatus() != null) comp.setStatus(dto.getStatus());
+        comp.setPenaltyZoneEnabled(dto.isPenaltyZoneEnabled());
         Competition saved = competitionRepository.save(comp);
         return mapToDto(saved);
     }

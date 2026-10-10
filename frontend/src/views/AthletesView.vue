@@ -6,7 +6,7 @@
         <p class="page-subtitle">Lista de atletas na prova atual</p>
       </div>
 
-      <button @click="showAddModal = true" class="btn btn-primary">
+      <button v-if="authStore.isAdmin" @click="showAddModal = true" class="btn btn-primary">
         + Adicionar Atleta
       </button>
     </div>
@@ -87,9 +87,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useCompetitionStore } from '../stores/competition'
 import api from '../api/axios'
 
+const authStore = useAuthStore()
 const competitionStore = useCompetitionStore()
 const athletes = ref([])
 const searchTerm = ref('')

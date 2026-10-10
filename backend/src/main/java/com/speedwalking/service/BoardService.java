@@ -50,6 +50,7 @@ public class BoardService {
 
         List<AthleteBoardStatusDto> statusList = new ArrayList<>();
         long totalDisqualified = 0;
+        long totalPenalized = 0;
 
         for (Athlete athlete : athletes) {
             AthleteBoardStatusDto status = new AthleteBoardStatusDto();
@@ -80,26 +81,24 @@ public class BoardService {
             int distinctRedCards = redCardJudgeIds.size();
             status.setRedCardCount(distinctRedCards);
 
-            // World Athletics disqualification logic
-            if (competition.isPenaltyZoneEnabled()) {
-                if (distinctRedCards >= 4) {
-                    status.setDisqualified(true);
-                    totalDisqualified++;
-                } else if (distinctRedCards == 3) {
-                    status.setInPenaltyZone(true);
-                }
-            } else {
-                if (distinctRedCards >= 3) {
-                    status.setDisqualified(true);
-                    totalDisqualified++;
-                }
+            // Official World Athletics / FPA Race Walking rule:
+            // Yellow paddles (amarelos) are only warnings.
+            // 3rd Red Card (3 juízes distintos) = Penalizado (Penalty Zone / Pit Lane).
+            // 4th Red Card (4 juízes distintos) = Desqualificado (DQ).
+            if (distinctRedCards >= 4) {
+                status.setDisqualified(true);
+                totalDisqualified++;
+            } else if (distinctRedCards == 3) {
+                status.setInPenaltyZone(true);
+                totalPenalized++;
             }
 
             statusList.add(status);
         }
 
-        // Sort: disqualified first, then descending by red card count, then ascending by bib
+        // Sort: disqualified first, then in penalty zone, then descending by red card count, then ascending by bib
         statusList.sort(Comparator.comparing(AthleteBoardStatusDto::isDisqualified).reversed()
+                .thenComparing(Comparator.comparing(AthleteBoardStatusDto::isInPenaltyZone).reversed())
                 .thenComparing(Comparator.comparingInt(AthleteBoardStatusDto::getRedCardCount).reversed())
                 .thenComparing(AthleteBoardStatusDto::getBibNumber));
 
@@ -110,6 +109,7 @@ public class BoardService {
         summary.setTotalYellowPaddles(infractions.stream().filter(i -> i.getCardCategory() == CardCategory.YP).count());
         summary.setTotalRedCards(infractions.stream().filter(i -> i.getCardCategory() == CardCategory.RC).count());
         summary.setTotalDisqualified(totalDisqualified);
+        summary.setTotalPenalized(totalPenalized);
         summary.setAthletes(statusList);
 
         return summary;

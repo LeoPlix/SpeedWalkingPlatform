@@ -21,16 +21,20 @@
     <!-- QUICK STATS -->
     <div class="stats-row">
       <div class="stat-box">
-        <span class="stat-number">{{ boardSummary?.totalAthletes || 10 }}</span>
+        <span class="stat-number">{{ boardSummary?.totalAthletes || 0 }}</span>
         <span class="stat-title">Atletas em Prova</span>
       </div>
       <div class="stat-box">
         <span class="stat-number text-yellow">{{ boardSummary?.totalYellowPaddles || 0 }}</span>
-        <span class="stat-title">Avisos (YP)</span>
+        <span class="stat-title">Advertências (YP)</span>
       </div>
       <div class="stat-box">
         <span class="stat-number text-red">{{ boardSummary?.totalRedCards || 0 }}</span>
-        <span class="stat-title">Cartões Vermelhos (RC)</span>
+        <span class="stat-title">Notas Desqualificação (RC)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-number text-yellow">{{ boardSummary?.totalPenalized || 0 }}</span>
+        <span class="stat-title">Pit Lane (3º RC)</span>
       </div>
       <div class="stat-box" :class="{ 'stat-alert': (boardSummary?.totalDisqualified || 0) > 0 }">
         <span class="stat-number text-danger">{{ boardSummary?.totalDisqualified || 0 }}</span>
@@ -44,7 +48,7 @@
         <div class="nav-icon bg-red">⚡</div>
         <div class="nav-info">
           <h3 class="nav-heading">Registo de Infrações</h3>
-          <p class="nav-desc">Interface tátil rápida para juízes de marcha registarem Avisos (YP) e Cartões Vermelhos (RC).</p>
+          <p class="nav-desc">Interface tátil rápida para juízes registarem Advertências (YP) e Notas de Desqualificação (RC).</p>
         </div>
       </router-link>
 
@@ -52,7 +56,7 @@
         <div class="nav-icon bg-blue">📋</div>
         <div class="nav-info">
           <h3 class="nav-heading">Quadro de Desqualificações</h3>
-          <p class="nav-desc">Posting Board oficial da World Athletics e histórico cronológico de notificações em tempo real.</p>
+          <p class="nav-desc">Posting Board oficial da World Athletics / FPA em tempo real (Regra 3 RC = Pit Lane, 4 RC = DQ).</p>
         </div>
       </router-link>
 
@@ -60,7 +64,15 @@
         <div class="nav-icon bg-green">🏃</div>
         <div class="nav-info">
           <h3 class="nav-heading">Lista de Atletas</h3>
-          <p class="nav-desc">Consulta e gestão de dorsais, nomes, categorias e clubes inscritos na prova.</p>
+          <p class="nav-desc">Consulta de dorsais, nomes, categorias e clubes inscritos na prova atual.</p>
+        </div>
+      </router-link>
+
+      <router-link v-if="authStore.isAdmin" to="/admin" class="nav-card card border-admin">
+        <div class="nav-icon bg-purple">⚙</div>
+        <div class="nav-info">
+          <h3 class="nav-heading">Painel de Administração</h3>
+          <p class="nav-desc">Gestão de competições (abrir/fechar/criar), juízes de marcha e atletas inscritos.</p>
         </div>
       </router-link>
     </div>
@@ -80,24 +92,40 @@
         <div class="rule-item">
           <div class="rule-symbol">~</div>
           <div>
-            <h4 class="rule-name">Perda de Contacto (Loss of Contact)</h4>
-            <p class="rule-text">Contacto ininterrupto com o solo. O pé da frente tem de contactar o solo antes que o pé de trás perca o contacto.</p>
+            <h4 class="rule-name">Suspensão (Loss of Contact)</h4>
+            <p class="rule-text">Contacto ininterrupto com o solo. O pé da frente tem de contactar o solo antes que o pé de trás perca o contacto com o mesmo.</p>
           </div>
         </div>
 
         <div class="rule-item">
-          <div class="rule-symbol">YP</div>
+          <div class="rule-symbol bg-yellow-dark">YP</div>
           <div>
-            <h4 class="rule-name">Yellow Paddle (Aviso)</h4>
-            <p class="rule-text">Quando o atleta está em perigo de não cumprir as regras. Cada juiz pode dar no máximo 1 aviso de cada tipo por atleta.</p>
+            <h4 class="rule-name">Advertência (Aviso Preliminar)</h4>
+            <p class="rule-text">As advertências (amarelos) são apenas avisos prévios quando o atleta está em risco de não cumprir a regra. Cada juiz só pode dar 1 aviso de cada tipo por atleta. Se o juiz já deu cartão vermelho, já não pode exibir advertências.</p>
           </div>
         </div>
 
         <div class="rule-item">
-          <div class="rule-symbol">RC</div>
+          <div class="rule-symbol bg-red-dark">RC</div>
           <div>
-            <h4 class="rule-name">Red Card (Proposta de DQ)</h4>
-            <p class="rule-text">Quando o atleta viola a regra. 3 cartões vermelhos de 3 juízes distintos resultam em desqualificação (DQ) imediata.</p>
+            <h4 class="rule-name">Nota de Desqualificação (Cartão Vermelho)</h4>
+            <p class="rule-text">Enviada ao Secretariado quando o atleta infringe o regulamento. O mesmo juiz não pode atribuir a mesma infração ao mesmo atleta.</p>
+          </div>
+        </div>
+
+        <div class="rule-item">
+          <div class="rule-symbol bg-yellow-dark">3 RC</div>
+          <div>
+            <h4 class="rule-name">Zona de Penalização (Pit Lane - 3º RC)</h4>
+            <p class="rule-text">Ao 3º Cartão Vermelho de 3 juízes distintos, o atleta cumpre paragem obrigatória conforme a distância: 30s (5km), 1 min (10km), 2 min (20km), 3,5 min (35km), 5 min (50km).</p>
+          </div>
+        </div>
+
+        <div class="rule-item">
+          <div class="rule-symbol bg-red-dark">4 RC</div>
+          <div>
+            <h4 class="rule-name">Desqualificação (DQ - 4º RC)</h4>
+            <p class="rule-text">Ao 4º Cartão Vermelho de 4 juízes distintos (ou 3º caso não se aplique Pit Lane), o atleta é imediatamente desqualificado da prova pelo Juiz Chefe.</p>
           </div>
         </div>
       </div>
@@ -107,9 +135,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useCompetitionStore } from '../stores/competition'
 import api from '../api/axios'
 
+const authStore = useAuthStore()
 const competitionStore = useCompetitionStore()
 const boardSummary = ref(null)
 
@@ -233,6 +263,19 @@ onMounted(async () => {
 .bg-red { background-color: #fee2e2; }
 .bg-blue { background-color: #e0f2fe; }
 .bg-green { background-color: #dcfce7; }
+.bg-purple { background-color: #f3e8ff; }
+
+.border-admin {
+  border-left: 4px solid #9333ea;
+}
+
+.bg-yellow-dark {
+  background-color: #ca8a04 !important;
+}
+
+.bg-red-dark {
+  background-color: #dc2626 !important;
+}
 
 .nav-heading {
   font-size: 1.1rem;

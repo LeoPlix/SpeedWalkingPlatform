@@ -6,8 +6,8 @@
           <span>{{ symbol }}</span>
         </div>
         <div>
-          <h3 class="modal-title">Confirmar Notificação?</h3>
-          <p class="modal-subtitle">{{ category === 'RC' ? 'Cartão Vermelho (RC)' : 'Aviso / Yellow Paddle (YP)' }}</p>
+          <h3 class="modal-title">Confirmar Envio?</h3>
+          <p class="modal-subtitle">{{ category === 'RC' ? 'Nota de Desqualificação (RC)' : 'Advertência (YP)' }}</p>
         </div>
       </div>
 
@@ -28,7 +28,7 @@
           <span class="info-label">Infração:</span>
           <span class="info-value">
             <span class="badge" :class="category === 'RC' ? 'badge-red' : 'badge-yellow'">
-              {{ category }} - {{ type.toUpperCase() }} ({{ symbol }})
+              {{ category === 'RC' ? 'NOTA DE DESQUALIFICAÇÃO' : 'ADVERTÊNCIA' }} - {{ type?.toLowerCase() === 'flexao' ? 'FLEXÃO' : 'SUSPENSÃO' }} ({{ symbol }})
             </span>
           </span>
         </div>

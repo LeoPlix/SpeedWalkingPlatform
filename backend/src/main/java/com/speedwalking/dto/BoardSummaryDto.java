@@ -11,6 +11,7 @@ public class BoardSummaryDto {
     private long totalYellowPaddles;
     private long totalRedCards;
     private long totalDisqualified;
+    private long totalPenalized;
     private List<AthleteBoardStatusDto> athletes = new ArrayList<>();
 
     public BoardSummaryDto() {}
@@ -61,6 +62,14 @@ public class BoardSummaryDto {
 
     public void setTotalDisqualified(long totalDisqualified) {
         this.totalDisqualified = totalDisqualified;
+    }
+
+    public long getTotalPenalized() {
+        return totalPenalized;
+    }
+
+    public void setTotalPenalized(long totalPenalized) {
+        this.totalPenalized = totalPenalized;
     }
 
     public List<AthleteBoardStatusDto> getAthletes() {

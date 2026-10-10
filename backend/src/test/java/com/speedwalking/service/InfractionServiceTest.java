@@ -13,6 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,10 +49,10 @@ class InfractionServiceTest {
 
     @BeforeEach
     void setUp() {
-        competition = new Competition("Prova Teste", "Lisboa", null, "ACTIVE", false);
+        competition = new Competition("Prova Teste", "Lisboa", null, "ACTIVE", true);
         competition.setId(1L);
 
-        athlete = new Athlete("104", "Caio Bonfim", "Brasil", "Senior", competition);
+        athlete = new Athlete("104", "Vitória Oliveira", "SL Benfica", "Senior", competition);
         athlete.setId(10L);
 
         judge = new User("juiz1", "pass", "Juiz 1", Role.ROLE_JUDGE, "J01");
@@ -61,14 +64,15 @@ class InfractionServiceTest {
         InfractionRequest req = new InfractionRequest();
         req.setCompetitionId(1L);
         req.setBibNumber("104");
-        req.setTime("10:00:00");
-        req.setInfractionType("CONTACTO");
+        req.setTime("10:00");
+        req.setInfractionType("SUSPENSAO");
         req.setCardCategory("YP");
         req.setJudgeId(1L);
 
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
         when(userRepository.findById(1L)).thenReturn(Optional.of(judge));
         when(athleteRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(Optional.of(athlete));
+        when(infractionRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(Collections.emptyList());
         when(infractionRepository.save(any(Infraction.class))).thenAnswer(i -> {
             Infraction inf = i.getArgument(0);
             inf.setId(100L);
@@ -79,7 +83,7 @@ class InfractionServiceTest {
 
         assertNotNull(response);
         assertEquals("104", response.getBibNumber());
-        assertEquals("Caio Bonfim", response.getAthleteName());
+        assertEquals("Vitória Oliveira", response.getAthleteName());
         verify(infractionRepository, times(1)).save(any(Infraction.class));
     }
 
@@ -88,8 +92,8 @@ class InfractionServiceTest {
         InfractionRequest req = new InfractionRequest();
         req.setCompetitionId(1L);
         req.setBibNumber("999");
-        req.setTime("10:00:00");
-        req.setInfractionType("CONTACTO");
+        req.setTime("10:00");
+        req.setInfractionType("SUSPENSAO");
         req.setCardCategory("YP");
         req.setJudgeId(1L);
 
@@ -102,6 +106,62 @@ class InfractionServiceTest {
         });
 
         assertTrue(exception.getMessage().contains("Dorsal #999 não pertence a nenhum atleta registado nesta competição"));
+        verify(infractionRepository, never()).save(any(Infraction.class));
+    }
+
+    @Test
+    void registerInfraction_ThrowsException_WhenSameJudgeGivesSameInfraction() {
+        InfractionRequest req = new InfractionRequest();
+        req.setCompetitionId(1L);
+        req.setBibNumber("104");
+        req.setTime("10:15");
+        req.setInfractionType("FLEXAO");
+        req.setCardCategory("YP");
+        req.setJudgeId(1L);
+
+        Infraction existing = new Infraction(
+                competition, judge, "104", "Vitória Oliveira", "10:00",
+                InfractionType.FLEXAO, CardCategory.YP, LocalDateTime.now(), null
+        );
+
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(judge));
+        when(athleteRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(Optional.of(athlete));
+        when(infractionRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(List.of(existing));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            infractionService.registerInfraction(req, "juiz1");
+        });
+
+        assertTrue(exception.getMessage().contains("O mesmo juiz não pode atribuir a mesma infração"));
+        verify(infractionRepository, never()).save(any(Infraction.class));
+    }
+
+    @Test
+    void registerInfraction_ThrowsException_WhenJudgeShowsPaddleAfterRedCard() {
+        InfractionRequest req = new InfractionRequest();
+        req.setCompetitionId(1L);
+        req.setBibNumber("104");
+        req.setTime("10:20");
+        req.setInfractionType("SUSPENSAO");
+        req.setCardCategory("YP");
+        req.setJudgeId(1L);
+
+        Infraction existingRedCard = new Infraction(
+                competition, judge, "104", "Vitória Oliveira", "10:05",
+                InfractionType.FLEXAO, CardCategory.RC, LocalDateTime.now(), null
+        );
+
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(judge));
+        when(athleteRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(Optional.of(athlete));
+        when(infractionRepository.findByCompetitionIdAndBibNumber(1L, "104")).thenReturn(List.of(existingRedCard));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            infractionService.registerInfraction(req, "juiz1");
+        });
+
+        assertTrue(exception.getMessage().contains("já não pode exibir advertências"));
         verify(infractionRepository, never()).save(any(Infraction.class));
     }
 }

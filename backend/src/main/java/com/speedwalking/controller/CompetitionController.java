@@ -40,4 +40,15 @@ public class CompetitionController {
     public ResponseEntity<CompetitionDto> create(@RequestBody CompetitionDto dto) {
         return ResponseEntity.ok(competitionService.createCompetition(dto));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CompetitionDto> update(@PathVariable Long id, @RequestBody CompetitionDto dto) {
+        return ResponseEntity.ok(competitionService.updateCompetition(id, dto));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<CompetitionDto> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        String status = body.getOrDefault("status", "ACTIVE");
+        return ResponseEntity.ok(competitionService.updateStatus(id, status));
+    }
 }

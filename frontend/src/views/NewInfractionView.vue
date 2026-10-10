@@ -87,16 +87,16 @@
         </div>
       </div>
 
-      <!-- TIME INPUT -->
+      <!-- TIME INPUT (Até aos minutos) -->
       <div class="form-group">
-        <label class="form-label" for="time">TIME (HORA DA INFRAÇÃO)</label>
+        <label class="form-label" for="time">HORA DA INFRAÇÃO (HH:mm)</label>
         <div class="time-input-group">
           <input
             id="time"
             v-model="raceTime"
             type="text"
             class="form-input font-mono time-field"
-            placeholder="HH:mm:ss"
+            placeholder="HH:mm"
           />
           <button type="button" @click="resetTimeToNow" class="btn btn-secondary reset-time-btn" title="Atualizar para agora">
             ↺ Agora
@@ -104,60 +104,92 @@
         </div>
       </div>
 
+      <!-- Judge Warning Banner if Judge Already Submitted Infractions to this athlete -->
+      <div v-if="judgeHasRedCard" class="judge-alert-box judge-alert-red">
+        ⛔ <strong>Atenção:</strong> Já atribuiu uma Nota de Desqualificação a este atleta. Não pode exibir mais advertências nem propostas.
+      </div>
+      <div v-else-if="judgeGivenYps.length > 0" class="judge-alert-box judge-alert-yellow">
+        ℹ <strong>Advertências já atribuídas por si a este atleta:</strong> {{ judgeGivenYps.join(', ') }}
+      </div>
+
       <div class="section-divider"></div>
 
-      <!-- YELLOW PADDLES (YP) -->
-      <div class="paddles-section">
+      <!-- ADVERTÊNCIAS (YP) -->
+      <div class="paddles-section" :class="{ 'section-disabled': judgeHasRedCard }">
         <div class="section-header">
-          <h3 class="section-title">YELLOW PADDLES (YP)</h3>
-          <span class="section-subtitle">Avisos preliminares</span>
+          <div>
+            <h3 class="section-title">ADVERTÊNCIAS (YP)</h3>
+            <span class="section-subtitle">Avisos prévios aos atletas (Raquetes Amarelas)</span>
+          </div>
+          <span v-if="judgeHasRedCard" class="badge badge-red">Bloqueado por RC prévio</span>
         </div>
         <div class="divider-line"></div>
 
         <div class="paddle-buttons-row">
           <!-- FLEXAO > -->
-          <div class="circle-btn-container" @click="handlePaddleClick('flexao', 'YP', '>')">
+          <div
+            class="circle-btn-container"
+            :class="{ 'btn-disabled': judgeHasRedCard || judgeHasYpFlexao }"
+            @click="handlePaddleClick('flexao', 'YP', '>')"
+          >
             <div class="circle-btn circle-btn-yellow">
               <span>&gt;</span>
             </div>
-            <span class="circle-btn-label">FLEXAO</span>
+            <span class="circle-btn-label">FLEXÃO</span>
+            <span v-if="judgeHasYpFlexao" class="already-tag">✓ Já advertido</span>
           </div>
 
-          <!-- CONTACTO ~ -->
-          <div class="circle-btn-container" @click="handlePaddleClick('contacto', 'YP', '~')">
+          <!-- SUSPENSAO ~ -->
+          <div
+            class="circle-btn-container"
+            :class="{ 'btn-disabled': judgeHasRedCard || judgeHasYpSuspensao }"
+            @click="handlePaddleClick('suspensao', 'YP', '~')"
+          >
             <div class="circle-btn circle-btn-yellow">
               <span>~</span>
             </div>
-            <span class="circle-btn-label">CONTACTO</span>
+            <span class="circle-btn-label">SUSPENSÃO</span>
+            <span v-if="judgeHasYpSuspensao" class="already-tag">✓ Já advertido</span>
           </div>
         </div>
       </div>
 
       <div class="section-divider"></div>
 
-      <!-- RED CARDS (RC) -->
+      <!-- NOTAS DE DESQUALIFICAÇÃO (RC) -->
       <div class="paddles-section">
         <div class="section-header">
-          <h3 class="section-title text-red">RED CARDS (RC)</h3>
-          <span class="section-subtitle">Propostas de desqualificação</span>
+          <div>
+            <h3 class="section-title text-red">NOTAS DE DESQUALIFICAÇÃO (RC)</h3>
+            <span class="section-subtitle">Propostas de desqualificação (Cartões Vermelhos)</span>
+          </div>
+          <span v-if="judgeHasRedCard" class="badge badge-red">Já enviou 1 RC</span>
         </div>
         <div class="divider-line"></div>
 
         <div class="paddle-buttons-row">
           <!-- FLEXAO > -->
-          <div class="circle-btn-container" @click="handlePaddleClick('flexao', 'RC', '>')">
+          <div
+            class="circle-btn-container"
+            :class="{ 'btn-disabled': judgeHasRedCard }"
+            @click="handlePaddleClick('flexao', 'RC', '>')"
+          >
             <div class="circle-btn circle-btn-red">
               <span>&gt;</span>
             </div>
-            <span class="circle-btn-label">FLEXAO</span>
+            <span class="circle-btn-label">FLEXÃO</span>
           </div>
 
-          <!-- CONTACTO ~ -->
-          <div class="circle-btn-container" @click="handlePaddleClick('contacto', 'RC', '~')">
+          <!-- SUSPENSAO ~ -->
+          <div
+            class="circle-btn-container"
+            :class="{ 'btn-disabled': judgeHasRedCard }"
+            @click="handlePaddleClick('suspensao', 'RC', '~')"
+          >
             <div class="circle-btn circle-btn-red">
               <span>~</span>
             </div>
-            <span class="circle-btn-label">CONTACTO</span>
+            <span class="circle-btn-label">SUSPENSÃO</span>
           </div>
         </div>
       </div>
@@ -180,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCompetitionStore } from '../stores/competition'
 import api from '../api/axios'
@@ -202,6 +234,29 @@ const errorToast = ref('')
 const allAthletes = ref([])
 const popularAthletes = ref([])
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+const judgeInfsForAthlete = ref([])
+
+// Computed properties to enforce race walking rules:
+// Rule 1: A judge cannot show paddles (YP) to an athlete if they already gave a Red Card (RC)
+const judgeHasRedCard = computed(() => {
+  return judgeInfsForAthlete.value.some(i => i.cardCategory === 'RC')
+})
+
+// Rule 2: The same judge cannot give the same infraction to the same athlete
+const judgeHasYpFlexao = computed(() => {
+  return judgeInfsForAthlete.value.some(i => i.cardCategory === 'YP' && i.infractionType?.toLowerCase() === 'flexao')
+})
+
+const judgeHasYpSuspensao = computed(() => {
+  return judgeInfsForAthlete.value.some(i => i.cardCategory === 'YP' && (i.infractionType?.toLowerCase() === 'suspensao' || i.infractionType?.toLowerCase() === 'contacto'))
+})
+
+const judgeGivenYps = computed(() => {
+  const items = []
+  if (judgeHasYpFlexao.value) items.push('Flexão (>)')
+  if (judgeHasYpSuspensao.value) items.push('Suspensão (~)')
+  return items
+})
 
 // Modal state
 const modalOpen = ref(false)
@@ -233,12 +288,16 @@ const clearBib = () => {
   athleteTeam.value = ''
   athleteFound.value = false
   athleteNotFound.value = false
+  judgeInfsForAthlete.value = []
 }
 
+// O tempo vai só até aos minutos (HH:mm)
 const resetTimeToNow = () => {
   triggerHaptic(15)
   const now = new Date()
-  raceTime.value = now.toTimeString().split(' ')[0]
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  raceTime.value = `${hours}:${minutes}`
 }
 
 const lookupAthlete = async (bibStr) => {
@@ -248,6 +307,7 @@ const lookupAthlete = async (bibStr) => {
     athleteTeam.value = ''
     athleteFound.value = false
     athleteNotFound.value = false
+    judgeInfsForAthlete.value = []
     return false
   }
 
@@ -270,6 +330,17 @@ const lookupAthlete = async (bibStr) => {
       athleteTeam.value = res.data.team || ''
       athleteFound.value = true
       athleteNotFound.value = false
+
+      // Fetch infractions for this athlete to check what this judge has already given
+      try {
+        const infRes = await api.get(`/infractions?competitionId=${compId}&bib=${bib}`)
+        const allInfs = infRes.data || []
+        const currentJudgeId = authStore.user?.id
+        judgeInfsForAthlete.value = allInfs.filter(i => String(i.judgeId) === String(currentJudgeId))
+      } catch (e) {
+        judgeInfsForAthlete.value = []
+      }
+
       return true
     }
   } catch (err) {
@@ -278,6 +349,7 @@ const lookupAthlete = async (bibStr) => {
       athleteTeam.value = ''
       athleteFound.value = false
       athleteNotFound.value = true
+      judgeInfsForAthlete.value = []
     }
   } finally {
     loadingAthlete.value = false
@@ -297,6 +369,7 @@ const selectBib = (athlete) => {
   athleteTeam.value = athlete.team || ''
   athleteFound.value = true
   athleteNotFound.value = false
+  lookupAthlete(athlete.bibNumber)
 }
 
 const fetchAthletes = async () => {
@@ -338,6 +411,29 @@ const handlePaddleClick = async (type, category, symbol) => {
     }
   }
 
+  // Regra Oficial 1: Se o juiz deu um cartão vermelho, o juiz já não pode mostrar raquetes àquele atleta
+  if (judgeHasRedCard.value) {
+    triggerHaptic([80, 50, 80])
+    errorToast.value = 'Já atribuiu uma Nota de Desqualificação (RC) a este atleta. Não é permitido efetuar novos registos.'
+    setTimeout(() => { errorToast.value = '' }, 4000)
+    return
+  }
+
+  // Regra Oficial 2: O mesmo juiz não pode dar ao mesmo atleta a mesma infração
+  if (category === 'YP' && type === 'flexao' && judgeHasYpFlexao.value) {
+    triggerHaptic([80, 50, 80])
+    errorToast.value = 'Já atribuiu uma Advertência de Flexão a este atleta!'
+    setTimeout(() => { errorToast.value = '' }, 4000)
+    return
+  }
+
+  if (category === 'YP' && type === 'suspensao' && judgeHasYpSuspensao.value) {
+    triggerHaptic([80, 50, 80])
+    errorToast.value = 'Já atribuiu uma Advertência de Suspensão a este atleta!'
+    setTimeout(() => { errorToast.value = '' }, 4000)
+    return
+  }
+
   triggerHaptic(category === 'RC' ? 40 : 25)
   selectedType.value = type
   selectedCategory.value = category
@@ -367,7 +463,8 @@ const submitInfraction = async () => {
 
     triggerHaptic([50, 50, 50])
     modalOpen.value = false
-    successToast.value = `SENT! Infração registada para o dorsal #${bib}`
+    const catDesc = selectedCategory.value === 'RC' ? 'Nota de Desqualificação' : 'Advertência'
+    successToast.value = `ENVIADO! ${catDesc} registada para o dorsal #${bib}`
     clearBib()
     resetTimeToNow()
 
@@ -666,5 +763,45 @@ onUnmounted(() => {
   justify-content: space-around;
   align-items: center;
   padding: 0.5rem 0;
+}
+
+.judge-alert-box {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  line-height: 1.4;
+}
+
+.judge-alert-red {
+  background-color: #fef2f2;
+  border: 1px solid #f87171;
+  color: #991b1b;
+}
+
+.judge-alert-yellow {
+  background-color: #fefce8;
+  border: 1px solid #facc15;
+  color: #854d0e;
+}
+
+.section-disabled {
+  opacity: 0.5;
+}
+
+.btn-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.already-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #16a34a;
+  background-color: #dcfce7;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  margin-top: 0.1rem;
 }
 </style>

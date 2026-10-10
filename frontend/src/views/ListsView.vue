@@ -41,12 +41,16 @@
           <span class="stat-val">{{ boardSummary?.totalAthletes || 0 }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Yellow Paddles</span>
+          <span class="stat-label">Advertências (YP)</span>
           <span class="stat-val text-yellow">{{ boardSummary?.totalYellowPaddles || 0 }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Red Cards</span>
+          <span class="stat-label">Notas Desqualificação (RC)</span>
           <span class="stat-val text-red">{{ boardSummary?.totalRedCards || 0 }}</span>
+        </div>
+        <div class="stat-card pitlane-card">
+          <span class="stat-label">Penalizados (Pit Lane)</span>
+          <span class="stat-val text-yellow">{{ boardSummary?.totalPenalized || 0 }}</span>
         </div>
         <div class="stat-card dq-card">
           <span class="stat-label">Desqualificados (DQ)</span>
@@ -56,8 +60,10 @@
 
       <!-- BOARD TABLE -->
       <div class="card table-card">
-        <h3 class="card-title">Quadro de Propostas de Desqualificação (Regra 3 Red Cards = DQ)</h3>
-        <p class="card-caption">3 cartões vermelhos de juízes diferentes resultam em desqualificação imediata.</p>
+        <h3 class="card-title">Quadro de Desqualificações (Posting Board Oficial)</h3>
+        <p class="card-caption">
+          Regra Oficial FPA / World Athletics: As advertências (amarelos) são avisos prévios. <strong>3 Notas (RC)</strong> = Penalização na Zona de Penalização (Pit Lane). <strong>4 Notas (RC)</strong> = Desqualificação (DQ) imediata.
+        </p>
 
         <div class="table-container">
           <table class="data-table">
@@ -65,9 +71,9 @@
               <tr>
                 <th>DORSAL</th>
                 <th>ATLETA</th>
-                <th>EQUIPA</th>
-                <th>AVISOS (YP)</th>
-                <th>CARTÕES VERMELHOS (RC)</th>
+                <th>CLUBE / EQUIPA</th>
+                <th>ADVERTÊNCIAS (YP)</th>
+                <th>NOTAS DE DESQUALIFICAÇÃO (RC)</th>
                 <th>TOTAL RC</th>
                 <th>ESTADO</th>
               </tr>
@@ -76,7 +82,7 @@
               <tr
                 v-for="athlete in boardSummary?.athletes || []"
                 :key="athlete.athleteId"
-                :class="{ 'row-dq': athlete.disqualified, 'row-warning': athlete.redCardCount > 0 && !athlete.disqualified }"
+                :class="{ 'row-dq': athlete.disqualified, 'row-pitlane': athlete.inPenaltyZone, 'row-warning': athlete.redCardCount > 0 && !athlete.disqualified && !athlete.inPenaltyZone }"
               >
                 <td class="font-mono font-bold text-center">
                   #{{ athlete.bibNumber }}
@@ -93,7 +99,7 @@
                       v-for="yp in athlete.yellowPaddles"
                       :key="yp.id"
                       class="paddle-tag paddle-yp"
-                      :title="`${yp.time} - Juiz: ${yp.judgeCode || yp.judgeName} (${yp.infractionType})`"
+                      :title="`${formatTime(yp.time)} - Juiz: ${yp.judgeCode || yp.judgeName} (${yp.infractionType?.toLowerCase() === 'flexao' ? 'Flexão' : 'Suspensão'})`"
                     >
                       {{ yp.symbol }}
                     </span>
@@ -106,7 +112,7 @@
                       v-for="rc in athlete.redCards"
                       :key="rc.id"
                       class="paddle-tag paddle-rc"
-                      :title="`${rc.time} - Juiz: ${rc.judgeCode || rc.judgeName} (${rc.infractionType})`"
+                      :title="`${formatTime(rc.time)} - Juiz: ${rc.judgeCode || rc.judgeName} (${rc.infractionType?.toLowerCase() === 'flexao' ? 'Flexão' : 'Suspensão'})`"
                     >
                       <span class="judge-sub">{{ rc.judgeCode || 'J' }}</span>
                       <span class="symbol-sub">{{ rc.symbol }}</span>
@@ -115,17 +121,17 @@
                   </div>
                 </td>
                 <td class="font-mono font-bold text-center">
-                  {{ athlete.redCardCount }} / 3
+                  {{ athlete.redCardCount }} / 4
                 </td>
                 <td>
                   <span v-if="athlete.disqualified" class="badge badge-red badge-dq">
-                    DESQUALIFICADO (DQ)
+                    DESQUALIFICADO (4º RC)
                   </span>
-                  <span v-else-if="athlete.inPenaltyZone" class="badge badge-yellow">
-                    PENALTY ZONE
+                  <span v-else-if="athlete.inPenaltyZone" class="badge badge-yellow badge-pitlane">
+                    PENALTY ZONE (3º RC)
                   </span>
                   <span v-else-if="athlete.redCardCount > 0" class="badge badge-yellow">
-                    {{ athlete.redCardCount }} CARTÃO(ÕES)
+                    {{ athlete.redCardCount }} NOTA(S) RC
                   </span>
                   <span v-else class="badge badge-green">
                     REGULAR
@@ -154,11 +160,11 @@
           </div>
 
           <div class="filter-group">
-            <label class="filter-label">Tipo de Cartão:</label>
+            <label class="filter-label">Tipo de Notificação:</label>
             <select v-model="filterCategory" class="form-input filter-input">
-              <option value="">Todos</option>
-              <option value="YP">Yellow Paddles (YP)</option>
-              <option value="RC">Red Cards (RC)</option>
+              <option value="">Todas</option>
+              <option value="YP">Advertências (YP)</option>
+              <option value="RC">Notas de Desqualificação (RC)</option>
             </select>
           </div>
         </div>
@@ -186,11 +192,11 @@
                     class="badge"
                     :class="inf.cardCategory === 'RC' ? 'badge-red' : 'badge-yellow'"
                   >
-                    {{ inf.cardCategory }} • {{ inf.infractionType }}
+                    {{ inf.cardCategory === 'RC' ? 'NOTA DE DESQUALIFICAÇÃO' : 'ADVERTÊNCIA' }} • {{ (inf.infractionType?.toLowerCase() === 'flexao' ? 'FLEXÃO' : 'SUSPENSÃO') }}
                   </span>
                 </div>
                 <div class="feed-meta">
-                  <span class="feed-time font-mono">🕒 {{ inf.time }}</span>
+                  <span class="feed-time font-mono">🕒 {{ formatTime(inf.time) }}</span>
                   <span class="feed-judge">
                     👤 Juiz: {{ inf.judgeName }} ({{ inf.judgeCode || 'J' }})
                   </span>
@@ -233,6 +239,15 @@ const loading = ref(false)
 
 const filterBib = ref('')
 const filterCategory = ref('')
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const parts = String(time).split(':')
+  if (parts.length >= 2) {
+    return `${parts[0]}:${parts[1]}`
+  }
+  return time
+}
 
 const fetchBoard = async () => {
   try {
@@ -383,6 +398,22 @@ onMounted(async () => {
 .dq-card {
   background-color: #fef2f2;
   border-color: #fca5a5;
+}
+
+.pitlane-card {
+  background-color: #fefce8;
+  border-color: #fde047;
+}
+
+.row-pitlane {
+  background-color: #fefce8 !important;
+}
+
+.badge-pitlane {
+  background-color: #eab308;
+  color: #713f12;
+  font-weight: 800;
+  border: 1px solid #ca8a04;
 }
 
 .text-danger {

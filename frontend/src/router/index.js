@@ -5,6 +5,7 @@ import HomeView from '../views/HomeView.vue'
 import NewInfractionView from '../views/NewInfractionView.vue'
 import ListsView from '../views/ListsView.vue'
 import AthletesView from '../views/AthletesView.vue'
+import AdminView from '../views/AdminView.vue'
 
 const routes = [
   {
@@ -32,6 +33,11 @@ const routes = [
     path: '/athletes',
     name: 'Athletes',
     component: AthletesView
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: AdminView
   },
   {
     path: '/:pathMatch(.*)*',

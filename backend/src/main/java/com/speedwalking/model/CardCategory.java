@@ -1,8 +1,8 @@
 package com.speedwalking.model;
 
 public enum CardCategory {
-    YP("Yellow Paddle", "Aviso"),
-    RC("Red Card", "Cartão Vermelho");
+    YP("Yellow Paddle", "Advertência"),
+    RC("Red Card", "Nota de Desqualificação");
 
     private final String englishName;
     private final String portugueseName;

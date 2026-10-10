@@ -80,27 +80,27 @@ public class DataInitializer implements CommandLineRunner {
         );
         athleteRepository.saveAll(athletes);
 
-        // 4. Sample Infractions for demo
+        // 4. Sample Infractions for demo (times formatted in HH:mm)
         Infraction inf1 = new Infraction(
-                comp, j1, "104", "Vitória Oliveira", "09:15:30",
-                InfractionType.CONTACTO, CardCategory.YP,
-                LocalDateTime.now().minusMinutes(40), "Perda de contacto na curva"
+                comp, j1, "104", "Vitória Oliveira", "09:15",
+                InfractionType.SUSPENSAO, CardCategory.YP,
+                LocalDateTime.now().minusMinutes(40), "Suspensão visível na curva"
         );
 
         Infraction inf2 = new Infraction(
-                comp, j2, "104", "Vitória Oliveira", "09:22:15",
-                InfractionType.CONTACTO, CardCategory.RC,
-                LocalDateTime.now().minusMinutes(33), "Contacto contínuo visível"
+                comp, j2, "104", "Vitória Oliveira", "09:22",
+                InfractionType.SUSPENSAO, CardCategory.RC,
+                LocalDateTime.now().minusMinutes(33), "Perda de contacto contínua"
         );
 
         Infraction inf3 = new Infraction(
-                comp, j1, "102", "João Vieira", "09:28:40",
+                comp, j1, "102", "João Vieira", "09:28",
                 InfractionType.FLEXAO, CardCategory.YP,
                 LocalDateTime.now().minusMinutes(27), "Joelho flexionado no apoio"
         );
 
         Infraction inf4 = new Infraction(
-                comp, j3, "104", "Vitória Oliveira", "09:35:10",
+                comp, j3, "104", "Vitória Oliveira", "09:35",
                 InfractionType.FLEXAO, CardCategory.RC,
                 LocalDateTime.now().minusMinutes(20), "Flexão repetida"
         );

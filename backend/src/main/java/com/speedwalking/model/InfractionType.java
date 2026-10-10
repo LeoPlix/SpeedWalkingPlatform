@@ -2,7 +2,8 @@ package com.speedwalking.model;
 
 public enum InfractionType {
     FLEXAO(">", "Flexão"),
-    CONTACTO("~", "Contacto");
+    SUSPENSAO("~", "Suspensão"),
+    CONTACTO("~", "Suspensão"); // Backward compatibility with previous records
 
     private final String symbol;
     private final String displayName;
@@ -26,8 +27,8 @@ public enum InfractionType {
         if (normalized.equals("flexao") || normalized.equals("flexão") || normalized.equals(">")) {
             return FLEXAO;
         }
-        if (normalized.equals("contacto") || normalized.equals("perda de contacto") || normalized.equals("~")) {
-            return CONTACTO;
+        if (normalized.equals("suspensao") || normalized.equals("suspensão") || normalized.equals("contacto") || normalized.equals("perda de contacto") || normalized.equals("~")) {
+            return SUSPENSAO;
         }
         return InfractionType.valueOf(val.toUpperCase());
     }

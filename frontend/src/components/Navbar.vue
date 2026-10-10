@@ -25,6 +25,9 @@
         <router-link to="/athletes" class="nav-link" active-class="active">
           Atletas
         </router-link>
+        <router-link v-if="authStore.isAdmin" to="/admin" class="nav-link nav-link-admin" active-class="active">
+          ⚙ Administração
+        </router-link>
       </nav>
 
       <!-- User & Logout section -->
